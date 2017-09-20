@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title></title>
+		<style type="text/css">
+			* {
+				overflow: hidden;
+				margin: 0;
+			}
+
+			canvas {
+				position: absolute; margin: auto;
+				top: 0; left: 0; right: 0; bottom: 0;
+				width: 512px; height: 512px;
+				image-rendering: pixelated;
+				border-radius: 256px;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="canvas"></canvas>
+		<script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
+		<script type="text/javascript">
+			var canv = document.getElementById("canvas")
+			var ctx = canvas.getContext("2d");
+			canv.width = canv.height = 128;
+
+			function set(x, y, img, col) {
+				img.data[(4*x)+(4*y*img.width)+0] = col[0]
+				img.data[(4*x)+(4*y*img.width)+1] = col[1]
+				img.data[(4*x)+(4*y*img.width)+2] = col[2]
+				img.data[(4*x)+(4*y*img.width)+3] = col[3]
+			}
+
+			var col = [
+				[172,218,205,255],
+				[255,255,255,255],
+				[240,180,180,255],
+				[255,255,255,255]
+			];
+
+			var img = ctx.createImageData(canv.width, canv.height);
+			function update() {
+				//img.data.forEach(function(e,i){ img.data[i+3]=((i%4==0)?255:0); });
+				let time = new Date().getTime();
+				for (var y=0; y<canv.height; y++) {
+					for (var x=0; x<canv.width; x++) {
+
+						let cx = (x/(canv.width/2))-1;
+						let cy = -(1-(y/(canv.height/2)));
+
+						d = Math.sqrt(cx*cx + cy*cy) * 1.4
+						a = Math.atan2(cx, cy)/Math.PI
+
+						v = Math.tan(d)/2 + a + (time*0.0006)
+
+						set(x, y, img, col[Math.floor(v%1*4)]);
+					}
+				}
+				ctx.putImageData(img, 0, 0)
+				window.requestAnimationFrame(update);
+			}
+
+			window.requestAnimationFrame(update);
+		</script>
+	</body>
+</html>
