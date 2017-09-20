@@ -4,27 +4,27 @@
 col = {13, 15, 12, 15}
 
 function getCOl(px, py, t)
-  cx = (px/64)-1
-  cy = 1-(py/64)
-  
-  -- Distance from pixel to center.
-  d = math.sqrt(cx^2 + cy^2)*1
-  
-  -- Angle from pixel to center.
-  a = math.atan2(cx, cy)/math.pi
-  
-  -- Distance, angle and time.
-  v = a + d*0.6 - (t*0.0002)
-  --v = a + math.tan(d)*0.6 - (t*0.0002)
-  
-  return col[math.floor(v%1*4)+1]
+	cx = (px/64)-1
+	cy = 1-(py/64)
+	
+	-- Distance from pixel to center.
+	d = math.sqrt(cx^2 + cy^2)*1
+	
+	-- Angle from pixel to center.
+	a = math.atan2(cx, cy)/math.pi
+	
+	-- Distance, angle and time.
+	v = a + d*0.6 - (t*0.0002)
+	--v = a + math.tan(d)*0.6 - (t*0.0002)
+	
+	return col[math.floor(v%1*4)+1]
 end
 
 function TIC()
-  t = time()
-  for x=0,128 dp
-  for y=0,128 do
-    c=getCol(x, y, t)
-    pix(x, y, c)
-  end end
+	t = time()
+	for x=0,128 do
+	for y=0,128 do
+		c=getCol(x, y, t)
+		pix(x, y, c)
+	end end
 end
