@@ -1,2 +1,5 @@
-# PICO-8 Carts
-> 🕹️ My boringly uninteresting carts I've made for the fantasy console.
+# Fantasy Carts
+> 🕹️ My boringly uninteresting carts I've made for several fantasy consoles.
+
+[PICO-8](https://www.lexaloffle.com/pico-8.php)
+[TIC-80](https://tic.computer)
