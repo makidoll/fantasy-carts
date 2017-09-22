@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title></title>
+		<style type="text/css">
+			* {
+				overflow: hidden;
+				margin: 0;
+			}
+			
+			body {
+			    width: 100vw;
+			    height: 100vh;
+			}
+
+			canvas {
+				position: absolute; margin: auto;
+				top: 0; left: 0; right: 0; bottom: 0;
+				width: 400px; height: 400px;
+				image-rendering: pixelated;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="canvas"></canvas>
+		<script type="text/javascript">
+			var canv = document.getElementById("canvas")
+			var ctx = canvas.getContext("2d");
+			//canv.width = document.body.clientWidth;
+            //canv.height = document.body.clientHeight;
+            canv.width = canv.height = 400;
+
+			function set(x, y, img, col) {
+				img.data[(4*x)+(4*y*img.width)+0] = col[0]
+				img.data[(4*x)+(4*y*img.width)+1] = col[1]
+				img.data[(4*x)+(4*y*img.width)+2] = col[2]
+				img.data[(4*x)+(4*y*img.width)+3] = col[3]
+			}
+
+			var col = [
+				[255,000,000,255],
+				[255,255,000,255],
+				[000,255,000,255],
+				[000,255,255,255],
+				[000,000,255,255],
+				[255,000,255,255]
+			];
+			
+			//function hue(h) {
+			//    let hue = h*6;
+			//    let sat = 1;
+			//    let val = 1;
+			//
+			//    let c = val*sat;
+			//    let x = c*(1-(hue%2-1));
+			//
+			//    let col = [];
+			//
+			//         if (hue==0) { col=[0,0,0,255]; }
+			//    else if (hue<=1) { col=[c,x,0,255]; }
+			//    else if (hue<=2) { col=[x,c,0,255]; }
+			//    else if (hue<=3) { col=[0,c,x,255]; }
+			//    else if (hue<=4) { col=[0,x,c,255]; }
+			//    else if (hue<=5) { col=[x,0,c,255]; }
+			//    else if (hue<=6) { col=[c,0,x,255]; }
+			//
+			//    col[0] = (col[0]+val-c)*255;
+			//    col[1] = (col[1]+val-c)*255;
+			//    col[2] = (col[2]+val-c)*255;
+			//
+			//    return col;
+			//}
+			
+			function hue(hue) {
+			    // http://www.splinter.com.au/converting-hsv-to-rgb-colour-using-c/
+			    let hf = hue*6;
+			    let S = 1;
+			    let V = 1;
+			    let R=G=B = 0;
+			    if (V <= 0) {
+			        R=G=B = 0;
+			    } else if (S <= 0) {
+			        R=G=B = V;
+			    } else {
+			        let i = Math.floor(hf);
+			        let f = hf - i;
+			        let pv = V * (1 - S)
+			        let qv = V * (1 - S * f)
+			        let tv = V * (1 - S * (1 - f));
+			        switch(i) {
+                        case 0: R = V; G = tv; B = pv; break;
+                        case 1: R = qv; G = V; B = pv; break;
+                        case 2: R = pv; G = V; B = tv; break;
+                        case 3: R = pv; G = qv; B = V; break;
+                        case 4: R = tv; G = pv; B = V; break;
+                        case 5: R = V; G = pv; B = qv; break;
+                        case 6: R = V; G = tv; B = pv; break;
+                        case -1: R = V; G = pv; B = qv; break;
+			        }
+			    }
+                return [R*255, G*255, B*255, 255];
+			}
+			
+			var img = ctx.createImageData(canv.width, canv.height);
+			
+			var max = 16;
+			var pos = [0
+			
+			
+			
+			
+			
+			, 0, 4];
+			
+			function update() {
+				img.data.forEach(function(e,i){ img.data[i+3]=((i%4==0)?0:255); });
+				let time = new Date().getTime();
+				for (var row=0; row<canv.height; row++) {
+					for (var col=0; col<canv.width; col++) {
+						//let cx = (x/canv.width);
+						//let cy = (y/canv.height);
+						let c_re = (col - canv.width/2)*pos[2]/canv.width;
+						let c_im = (row - canv.height/2)*pos[2]/canv.width;
+						let x = y = 0;
+						let i = 0;
+						while (x*x+y*y <= 4 && i < max) {
+						    let x_new = x*x - y*y + c_re;
+						    y = 2*x*y + c_im - pos[1];
+						    x = x_new + pos[0];
+						    i++;
+						}
+						if (i < max) {
+						    set(col, row, img, hue(i/max));
+						}
+						
+						//c = col[Math.floor((time*0.001)%1*6)]
+						//set(x, y, img, hue(cx*4));
+					}
+				}
+				ctx.putImageData(img, 0, 0)
+				window.requestAnimationFrame(update);
+			} window.requestAnimationFrame(update);
+			
+			document.onkeypress = function(e) {
+			    switch(e.key) {
+			        case "e": pos[2]=pos[2]*0.9; break;
+			        case "q": pos[2]=pos[2]*1.1; break;
+			        
+			        case "a": pos[0]=pos[0]-(pos[2]*0.04); break;
+			        case "d": pos[0]=pos[0]+(pos[2]*0.04); break;
+			        
+			        case "w": pos[1]=pos[1]+(pos[2]*0.04); break;
+			        case "s": pos[1]=pos[1]-(pos[2]*0.04); break;
+			    }
+			    //max = max * 8*pos[2];
+			}
+		</script>
+	</body>
+</html>
