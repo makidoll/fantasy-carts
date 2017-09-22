@@ -7,3 +7,4 @@
 ## HTML Files
 
 - [Candy](https://makixx.github.io/fantasy-carts/candy.html)
+- [Mandelbrot](https://makixx.github.io/fantasy-carts/mandelbrot.html)
