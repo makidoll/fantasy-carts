@@ -14,59 +14,50 @@ function createTri(size)
 	}
 end
 
+function project(v)
+	z = v[3]+5 -- near
+	if (z < camera.position[3]) then
+		return nil
+	else 
+		f = (love.graphics.getHeight()/2)/z
 
-function project(v, p) -- vertex, projection
-	v = {
-		v[1]*p[1] +  v[2]*p[2] +  v[3]*p[3] +  1*p[4], -- v[4]
-		v[1]*p[5] +  v[2]*p[6] +  v[3]*p[7] +  1*p[8], 
-		v[1]*p[9] + v[2]*p[10] + v[3]*p[11] + 1*p[12],
-		-- 4th value?? 
-	}
-
-	return {
-		love.graphics.getWidth()/2 + v[1]*camera.scale,
-		love.graphics.getHeight()/2 + v[3]*camera.scale,
-	}
+		return {
+			love.graphics.getWidth()/2+v[1]*f,
+			love.graphics.getHeight()/2+v[2]*f
+		}
+	end
 end
 
-function orthographic(w, h, n, f)
-	return {
-		2/w, 0, 0, -1,
-		0, 2/h, 0, -1,
-		0, 0, 2/(f-n), -((f+n)/(f-n)),
-		0, 0, 0, 1
-	}
-end
+-- function rotateCamera(v, r)
+-- 	nv = {};
+	
+-- 	-- rotate in x
+-- 	nv[1] = v[1]
+-- 	nv[2] = math.cos(r[1])*v[2] + -math.sin(r[1])*v[3]
+-- 	nv[3] = math.sin(r[1])*v[2] +  math.cos(r[1])*v[3]
+-- 	v = nv
+	
+-- 	-- rotate in y
+-- 	nv[1] =  math.cos(r[2])*v[1] + math.sin(r[2])*v[3]
+-- 	nv[2] =  v[2]
+-- 	nv[3] = -math.sin(r[2])*v[1] + math.cos(r[2])*v[3]
+-- 	v = nv
+	
+-- 	-- rotate in z
+-- 	nv[1] = math.cos(r[3])*v[1] + -math.sin(r[3])*v[2]
+-- 	nv[2] = math.sin(r[3])*v[1] +  math.cos(r[3])*v[2]
+-- 	nv[3] = v[3]
+-- 	v = nv
+	
+-- 	return v
+-- end
 
-function orthoTest(v)
-	return {
-		love.graphics.getWidth()/2 + v[1]*camera.scale,
-		love.graphics.getHeight()/2 + v[3]*camera.scale,
-	}
-end
 
-function rotateCamera(v, r)
-	nv = {};
-	
-	-- rotate in x
-	nv[1] = v[1]
-	nv[2] = math.cos(r[1])*v[2] + -math.sin(r[1])*v[3]
-	nv[3] = math.sin(r[1])*v[2] +  math.cos(r[1])*v[3]
-	v = nv
-	
-	-- rotate in y
-	nv[1] =  math.cos(r[2])*v[1] + math.sin(r[2])*v[3]
-	nv[2] =  v[2]
-	nv[3] = -math.sin(r[2])*v[1] + math.cos(r[2])*v[3]
-	v = nv
-	
-	-- rotate in z
-	nv[1] = math.cos(r[3])*v[1] + -math.sin(r[3])*v[2]
-	nv[2] = math.sin(r[3])*v[1] +  math.cos(r[3])*v[2]
-	nv[3] = v[3]
-	v = nv
-	
-	return v
+function rotate(p, r)
+	return {
+		p[1]*math.cos(r) - p[2]*math.sin(r),
+		p[2]*math.cos(r) + p[1]*math.sin(r)
+	}
 end
 
 function love.draw()
@@ -75,11 +66,21 @@ function love.draw()
 		-- 3d projecting vertecies to points
 		mesh.points = {}
 		for i, vertex in pairs(mesh.verts) do
-			mesh.points[i] = 
-				orthoTest(
-					rotateCamera(vertex, camera.rotation),
-					camera.projection
-				)
+			v = {
+				vertex[1]+camera.position[1],
+				vertex[2]+camera.position[2],
+				vertex[3]+camera.position[3]
+			}
+
+			yaw = rotate({v[1],v[3]}, camera.rotation[2])
+			v[1] = yaw[1]
+			v[3] = yaw[2]
+
+			pitch = rotate({v[2],v[3]}, camera.rotation[1])
+			v[2] = pitch[1]
+			v[3] = pitch[2]
+
+			mesh.points[i] = project(v)
 			--print(mesh.points[i][1]..", "..mesh.points[i][2])
 		end
 
@@ -103,16 +104,25 @@ function love.draw()
 
 end
 
-function love.update()
+function love.update(dt)
 
 	if (love.keyboard.isDown("left")) then
-		camera.rotation[3] = camera.rotation[3]+camera.speed.rotation end
+		camera.rotation[2] = camera.rotation[2]+camera.speed.rotation*dt end
 	if (love.keyboard.isDown("right")) then
-		camera.rotation[3] = camera.rotation[3]-camera.speed.rotation end
+		camera.rotation[2] = camera.rotation[2]-camera.speed.rotation*dt end
 	if (love.keyboard.isDown("down")) then
-		camera.rotation[1] = camera.rotation[1]+camera.speed.rotation end
+		camera.rotation[1] = camera.rotation[1]+camera.speed.rotation*dt end
 	if (love.keyboard.isDown("up")) then
-		camera.rotation[1] = camera.rotation[1]-camera.speed.rotation end
+		camera.rotation[1] = camera.rotation[1]-camera.speed.rotation*dt end
+
+	if (love.keyboard.isDown("w")) then
+		camera.position[3] = camera.position[3] - camera.speed.position*dt end
+	if (love.keyboard.isDown("s")) then
+		camera.position[3] = camera.position[3] + camera.speed.position*dt end
+	if (love.keyboard.isDown("a")) then
+		camera.position[1] = camera.position[1] + camera.speed.position*dt end
+	if (love.keyboard.isDown("d")) then
+		camera.position[1] = camera.position[1] - camera.speed.position*dt end
 
 end
 
@@ -121,7 +131,6 @@ function love.load()
 	scene = {
 		obj.load("kot.obj"),
 	}
-
 
 	-- give every mesh's face a random colour
 	for _, mesh in pairs(scene) do
@@ -136,17 +145,11 @@ function love.load()
 	end
 
 	camera = {
-		projection = orthographic(
-			love.graphics.getWidth(),
-			love.graphics.getHeight(),
-			0, 32
-		),
-
-		scale = 128,
 		position = {0, 0, 0},
-		rotation = {1.2, 0, 0},
+		rotation = {0, 0, 0},
 
 		speed = {
+			position = 12,
 			rotation = 0.08
 		}
 	}

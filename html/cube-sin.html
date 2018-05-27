@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title></title>
+		<style>
+			* {
+				margin: 0;
+			}
+
+			body {
+				background-color: #000;
+				overflow: hidden;
+			}
+
+			canvas {
+				image-rendering: pixelated;
+			}
+		</style>
+	</head>
+	<body>
+		<script type="text/javascript">
+			// inpired from https://www.youtube.com/watch?v=H81Tdrmz2LA
+
+			var Thing = function() {
+				this.canvas = document.createElement("canvas");
+				this.ctx = this.canvas.getContext("2d");
+				this.image = null;
+				this.size = 1;
+				this.rotation = [
+					0.5*Math.PI/2,
+					0.25*Math.PI/2
+				];
+				this.position = [0,0.5,0];
+
+				this.square
+
+				this.shape = function(x, y, s, h) {
+					verts = [[-s,-h,s],[-s,h,s],[-s,h,-s],[s,-h,s],[s,h,s],[s,-h,-s],[s,h,-s]];
+					verts.forEach((e, i) => {
+						verts[i][0]+=x;
+						verts[i][2]+=y;
+					});
+					return {
+						verts,
+						faces: [
+							[5,6,4,3,[60,80,140]],
+							[3,4,1,0,[220,220,180]],
+							[6,2,1,4,[120,180,180]],
+						]
+					}
+				}
+
+				this.clear = function(image, color) {
+					for (var i=0; i<image.data.length/4; i++) {
+						image.data[i*4 + 0] = color[0];
+						image.data[i*4 + 1] = color[1];
+						image.data[i*4 + 2] = color[2];
+						image.data[i*4 + 3] = 255;
+					}
+					return image;
+				}
+
+				this.pixel = function(p, color) {
+					let i = Math.floor(p[0]) +
+						(Math.floor(p[1])*this.canvas.width);
+					this.image.data[i*4 + 0] = color[0];
+					this.image.data[i*4 + 1] = color[1];
+					this.image.data[i*4 + 2] = color[2];
+				}
+
+				this.tri = function(p, color) {
+					//https://www.codeproject.com/Tips/86354/draw-triangle-algorithm-D
+					let x0 = p[0][0]; let y0 = p[0][1];
+					let x1 = p[1][0]; let y1 = p[1][1];
+					let x2 = p[2][0]; let y2 = p[2][1];
+					let width = this.canvas.width;
+					let height = this.canvas.height;
+
+					if (y1 > y2) {
+						let x = x2;
+						x2 = x1;
+						x1 = x;
+
+						let y = y2;
+						y2 = y1;
+						y1 = y;
+					}
+
+					if (y0 > y1) {
+						let x = x1;
+						x1 = x0;
+						x0 = x;
+
+						let y = y1;
+						y1 = y0;
+						y0 = y;
+					}
+
+					if (y1 > y2) {
+						let x = x2;
+						x2 = x1;
+						x1 = x;
+
+						let y = y2;
+						y2 = y1;
+						y1 = y;
+					}
+
+					let dx_far = (x2-x0)/(y2-y0+1);
+					let dx_upper = (x1-x0)/(y1-y0+1);
+					let dx_low = (x2-x1)/(y2-y1+1);
+					let xf = x0;
+					let xt = x0+dx_upper;
+					for (let y=y0; y<=(y2>height? height: y2); y++) {
+						if (y>=0) {
+							for (let x=(xf>0? xf: 0); x<=(xt<width? xt: width-1); x++)
+								this.pixel([x,y], color);
+
+            				for (let x=(xf<width? xf: width-1); x>=(xt>0? xt:0); x--)
+                				this.pixel([x,y], color);
+						}
+						xf += dx_far;
+						if (y<y1)
+							xt += dx_upper;
+						else
+							xt += dx_low;
+					}
+				}
+
+				this.project = function(vertex) {
+					return [
+						this.canvas.width-(this.canvas.width/2+vertex[0]*this.size),
+						this.canvas.height-(this.canvas.height/2+vertex[1]*this.size),
+					]
+				}
+
+				this.rotate = function(p, r) {
+					return [
+						p[0]*Math.cos(r) - p[1]*Math.sin(r),
+						p[1]*Math.cos(r) + p[0]*Math.sin(r)
+					]
+				}
+
+				this.draw = function() {
+					this.image = this.clear(this.image, [250, 250, 250]);
+
+					this.scene.forEach((mesh, _) => {
+						mesh.points = [];
+						mesh.verts.forEach((vertex, i) => {
+							v = [
+								vertex[0]+this.position[0],
+								vertex[1]+this.position[1], 
+								vertex[2]+this.position[2]
+							];
+
+							yaw = this.rotate([v[0], v[2]], this.rotation[0]);
+							v[0] = yaw[0];
+							v[2] = yaw[1];
+
+							pitch = this.rotate([v[1], v[2]], this.rotation[1]);
+							v[1] = pitch[0];
+							v[2] = pitch[1];
+
+							mesh.points[i] = this.project(v);
+						});
+
+						mesh.faces.forEach((face) => {
+							this.tri([
+								mesh.points[face[0]],
+								mesh.points[face[1]],
+								mesh.points[face[2]],
+							], face[4]);
+							this.tri([
+								mesh.points[face[0]],
+								mesh.points[face[2]],
+								mesh.points[face[3]],
+							], face[4]);
+						});
+					});
+
+					this.ctx.putImageData(this.image, 0, 0)
+				}
+
+				this.update = function() {
+					let time = window.performance.now()/1000;
+
+					let size = 12;
+					let h = 1/size;
+					this.scene = [];
+
+					for (let y=0; y<size; y++) {
+						for (let x=0; x<size; x++) {
+							let t = Math.sin(x*(size)-time*2);
+							this.scene.push(
+								this.shape(x*h*2, y*h*2, h, (t+1.5)*h*size/2)
+							);
+						}
+					}
+
+					// this.scene = [
+					// 	this.shape(0, 0, 1, (Math.sin(time*4)+2)*1.5),
+					// 	this.shape(2.5, 0, 1, (Math.sin(time*4)+2)*1.5),
+					// 	this.shape(0, 2.5, 1, (Math.sin(time*4)+2)*1.5),
+					// 	this.shape(2.5, 2.5, 1, (Math.sin(time*4)+2)*1.5),
+					// ]
+
+					this.draw();
+					window.requestAnimationFrame(this.update);
+				}.bind(this)
+
+				this.init = function() {
+					this.canvas.width = window.innerWidth;
+					this.canvas.height = window.innerHeight;
+					this.image = this.ctx.createImageData(
+						this.canvas.width, this.canvas.height);
+					this.size = this.canvas.height/4;
+
+					this.scene = [];
+
+					document.body.appendChild(this.canvas);
+					window.requestAnimationFrame(this.update)
+				}
+			}
+
+			var thing = new Thing();
+			thing.init();
+		</script>
+	</body>
+</html>
