@@ -5,6 +5,7 @@
 
 - [Candy](https://makitty.gitlab.io/fantasy-carts/html/candy.html)
 - [Mandelbrot](https://makitty.gitlab.io/fantasy-carts/html/mandelbrot.html)
+- [3D](https://makitty.gitlab.io/fantasy-carts/html/3d.html)
 
 ## PICO-8 things
 
